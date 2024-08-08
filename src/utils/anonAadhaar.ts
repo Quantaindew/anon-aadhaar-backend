@@ -3,6 +3,7 @@ import type { InitArgs } from "@anon-aadhaar/core";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { certificate } from "./certificate.js";
+import { testCertificate } from "./testCertificate.js";
 import { writeFile } from "fs/promises";
 import { config } from "dotenv";
 config();
@@ -27,6 +28,7 @@ export async function generateProof(qrCode: string, signal: string) {
     const args = await generateArgs({
       qrData: qrCode,
       certificateFile: certificate,
+      //certificateFile: testCertificate,
       signal: signal,
       nullifierSeed,
       fieldsToRevealArray: [
