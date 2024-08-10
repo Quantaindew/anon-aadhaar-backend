@@ -32,6 +32,10 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
 });
 
+app.get('/ping', (req, res) => {
+  res.status(200).json({ status: 'pong', timestamp: new Date().toISOString() });
+});
+
 app.use("/api/proof", proofRoutes);
 app.use("/api/connection", connectRoutes);
 app.use("/api/user", userRoutes);

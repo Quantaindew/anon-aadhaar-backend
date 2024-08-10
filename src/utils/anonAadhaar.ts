@@ -49,16 +49,17 @@ export async function generateProof(qrCode: string, signal: string) {
     console.log('Starting prove function');
     let proofResult;
     try {
+      const provePromise = prove(args);
       proofResult = await Promise.race([
-        prove(args),
+        provePromise,
         new Promise((_, reject) => setTimeout(() => reject(new Error('Prove function timed out after 5 minutes')), 300000))
       ]);
+      console.log('Prove function completed successfully');
     } catch (proveError) {
-      console.error('Error in prove function:', proveError);
+      console.error('Error or timeout in prove function:', proveError);
       throw proveError;
     }
     console.timeEnd('prove');
-    console.log('Prove function completed');
 
     console.time('writeFile');
     await writeFile(
