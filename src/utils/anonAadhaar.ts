@@ -5,9 +5,6 @@ import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { certificate } from "./certificate.js";
 import { writeFile } from "fs/promises";
-import { config } from "dotenv";
-import { updateProgress } from '../index.js';
-config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,14 +20,11 @@ const anonAadhaarInitArgs: InitArgs = {
 export async function generateProof(qrCode: string, signal: string) {
   console.log('generateProof started');
   try {
-    console.time('init');
     await init(anonAadhaarInitArgs);
-    console.timeEnd('init');
     console.log('AnonAadhaar initialized');
 
     const nullifierSeed = BigInt("2222129237572311751221168725011824235124166");
 
-    console.time('generateArgs');
     const args = await generateArgs({
       qrData: qrCode,
       certificateFile: certificate,
@@ -43,57 +37,19 @@ export async function generateProof(qrCode: string, signal: string) {
         "revealState",
       ],
     });
-    console.timeEnd('generateArgs');
     console.log('Args generated');
 
-    console.time('prove');
     console.log('Starting prove function');
-    let proofResult;
-    try {
-      const provePromise = new Promise(async (resolve, reject) => {
-        try {
-          console.log('Prove function: starting computation');
-          let lastLogTime = Date.now();
-          const logInterval = 30000; // Log every 30 seconds
-          
-          const result = await prove(args, (progress) => {
-            updateProgress(progress * 100);
-            const currentTime = Date.now();
-            if (currentTime - lastLogTime >= logInterval) {
-              console.log(`Prove function progress: ${progress * 100}%`);
-              lastLogTime = currentTime;
-            }
-          });
-          
-          console.log('Prove function: computation completed');
-          resolve(result);
-        } catch (error) {
-          console.error('Prove function: error during computation', error);
-          reject(error);
-        }
-      });
+    const proofResult = await prove(args);
+    console.log("Proof generated", proofResult);
+    console.log('Prove function completed successfully');
 
-      proofResult = await Promise.race([
-        provePromise,
-        new Promise((_, reject) => setTimeout(() => {
-          console.log('Prove function: timeout reached');
-          reject(new Error('Prove function timed out after 15 minutes'));
-        }, 900000))
-      ]);
-      console.log('Prove function completed successfully');
-    } catch (proveError) {
-      console.error('Error or timeout in prove function:', proveError);
-      throw proveError;
-    }
-    console.timeEnd('prove');
-
-    console.time('writeFile');
     await writeFile(
       join(__dirname, "./proof.json"),
       JSON.stringify(proofResult),
     );
-    console.timeEnd('writeFile');
     console.log('Proof written to file');
+    
     return proofResult;
 
   } catch (error) {
@@ -101,4 +57,3 @@ export async function generateProof(qrCode: string, signal: string) {
     throw error;
   }
 }
-//generateProof(`${process.env.QR_CODE}`, "1234532454678").then(console.log).catch(console.error);

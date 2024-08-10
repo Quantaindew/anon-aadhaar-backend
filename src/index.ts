@@ -10,11 +10,9 @@ dotenv.config();
 const app = express();
 const PORT = 8080;
 
-// Global variable to track proof generation progress
-let proofProgress = 0;
-
+// Increase the timeout to 30 minutes
 app.use((req, res, next) => {
-  res.setTimeout(900000, () => { // 15 minutes
+  res.setTimeout(1800000, () => { // 30 minutes
     res.status(408).send('Request has timed out');
   });
   next();
@@ -35,29 +33,10 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
 });
 
-app.get('/ping', (req, res) => {
-  res.status(200).json({ status: 'pong', timestamp: new Date().toISOString() });
-});
-
-// New endpoint to check proof generation progress
-app.get('/progress', (req, res) => {
-  res.status(200).json({ progress: proofProgress });
-});
-
-// Middleware to reset progress before starting a new proof generation
-app.use("/api/proof", (req, res, next) => {
-  proofProgress = 0;
-  next();
-}, proofRoutes);
-
+app.use("/api/proof", proofRoutes);
 app.use("/api/connection", connectRoutes);
 app.use("/api/user", userRoutes);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
-// Export a function to update progress (to be used in the prove function)
-export function updateProgress(progress: number) {
-  proofProgress = progress;
-}
