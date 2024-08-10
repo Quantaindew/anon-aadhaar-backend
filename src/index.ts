@@ -11,13 +11,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3222;
 
-// Add these lines to set global timeout and increase payload limit
 app.use((req, res, next) => {
-  res.setTimeout(300000, () => {
+  res.setTimeout(900000, () => { // 15 minutes
     res.status(408).send('Request has timed out');
   });
   next();
 });
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 

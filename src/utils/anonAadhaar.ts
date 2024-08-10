@@ -22,10 +22,14 @@ const anonAadhaarInitArgs: InitArgs = {
 export async function generateProof(qrCode: string, signal: string) {
   console.log('generateProof started');
   try {
+    console.time('init');
     await init(anonAadhaarInitArgs);
+    console.timeEnd('init');
     console.log('AnonAadhaar initialized');
+
     const nullifierSeed = BigInt("2222129237572311751221168725011824235124166");
 
+    console.time('generateArgs');
     const args = await generateArgs({
       qrData: qrCode,
       certificateFile: certificate,
@@ -38,16 +42,21 @@ export async function generateProof(qrCode: string, signal: string) {
         "revealState",
       ],
     });
+    console.timeEnd('generateArgs');
     console.log('Args generated');
 
+    console.time('prove');
     console.log('Starting prove function');
     const anonAadhaarCore = await prove(args);
+    console.timeEnd('prove');
     console.log('Prove function completed');
-    //
+
+    console.time('writeFile');
     await writeFile(
       join(__dirname, "./proof.json"),
       JSON.stringify(anonAadhaarCore),
     );
+    console.timeEnd('writeFile');
     console.log('Proof written to file');
     return anonAadhaarCore;
 

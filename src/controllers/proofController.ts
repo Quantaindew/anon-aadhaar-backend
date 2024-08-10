@@ -15,6 +15,10 @@ export async function generateProofController(req: Request, res: Response) {
     res.json({ proof });
   } catch (error) {
     console.error('Error generating proof:', error);
-    res.status(500).json({ error: 'An error occurred while generating the proof' });
+    res.status(500).json({ 
+      error: 'An error occurred while generating the proof',
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 }
