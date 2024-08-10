@@ -45,6 +45,10 @@ export async function generateProof(qrCode: string, signal: string) {
     const startTime = Date.now();
     let proofResult;
     try {
+      // Run garbage collection before starting the prove function
+      if (global.gc) {
+        global.gc();
+      }
       proofResult = await prove(args);
     } catch (proveError) {
       console.error('Error in prove function:', proveError);
@@ -52,6 +56,11 @@ export async function generateProof(qrCode: string, signal: string) {
     }
     const endTime = Date.now();
     console.log(`Prove function completed in ${(endTime - startTime) / 1000} seconds`);
+
+    // Run garbage collection after the prove function
+    if (global.gc) {
+      global.gc();
+    }
 
     console.log('Writing proof to file...');
     await writeFile(
