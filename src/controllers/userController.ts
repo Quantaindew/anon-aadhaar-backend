@@ -7,6 +7,8 @@ import { data } from '../../sampledata.js'
 import { writeFile } from 'fs/promises';
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import { config } from "dotenv";
+config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -20,9 +22,9 @@ export async function userController(req: Request, res: Response) {
     signal = BigInt(signal)
     nonce = BigInt(nonce)
     try {
-        const provider = new ethers.JsonRpcProvider(`https://sepolia.infura.io/v3/e3200dad6bf545df8cd796f1d2dc1875`);
+        const provider = new ethers.JsonRpcProvider(`${process.env.RPC_URL}`);
         
-        const relayerPrivateKey = "53f5958e120b121e1b77591ae1276ca5f3d3922d250a5c4af85b94c2ec5da54f";
+        const relayerPrivateKey = `${process.env.RELAYER_PRIVATE_KEY}`;
         if (!relayerPrivateKey) {
             throw new Error("Private keys not found in .env file");
         }
@@ -30,7 +32,7 @@ export async function userController(req: Request, res: Response) {
         const relayerWallet = new ethers.Wallet(relayerPrivateKey, provider);
         console.log("Relayer wallet address:", relayerWallet.address);
 
-        const contractAddress = '0x238e5Fa0B3bE9f851AddbC6A3f92ac0566aB041a';
+        const contractAddress = '0x1e0F5B806D70F7BEf0e1bB9338347746b3a875e4';
         const contract = new ethers.Contract(contractAddress, ABI, relayerWallet);
 
         console.log('Adding user gasless...');
