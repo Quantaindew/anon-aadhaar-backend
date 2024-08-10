@@ -11,6 +11,16 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 3222;
 
+// Add these lines to set global timeout and increase payload limit
+app.use((req, res, next) => {
+  res.setTimeout(300000, () => {
+    res.status(408).send('Request has timed out');
+  });
+  next();
+});
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
 app.use(
   cors({
     origin: "https://omelette-app.vercel.app",
@@ -18,7 +28,9 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
-app.use(express.json());
+
+// Remove this line as it's replaced by the one with the limit above
+// app.use(express.json());
 
 app.use("/api/proof", proofRoutes);
 app.use("/api/connection", connectRoutes);
@@ -28,4 +40,3 @@ app.use("/api/", (req,res)=>{return res.json({status:"OK"})});
 app.listen(PORT,'0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
-
