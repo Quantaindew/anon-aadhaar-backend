@@ -10,12 +10,10 @@ dotenv.config();
 const app = express();
 const PORT = 8080;
 
-// Increase the timeout to 30 minutes
-app.use((req, res, next) => {
-  res.setTimeout(1800000, () => { // 30 minutes
-    res.status(408).send('Request has timed out');
-  });
-  next();
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({ error: 'An unexpected error occurred' });
 });
 
 app.use(express.json({ limit: '50mb' }));
@@ -37,6 +35,18 @@ app.use("/api/proof", proofRoutes);
 app.use("/api/connection", connectRoutes);
 app.use("/api/user", userRoutes);
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // Optionally, you can choose to exit the process here
+  // process.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // Optionally, you can choose to exit the process here
+  // process.exit(1);
 });

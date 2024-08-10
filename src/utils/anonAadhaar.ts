@@ -20,11 +20,13 @@ const anonAadhaarInitArgs: InitArgs = {
 export async function generateProof(qrCode: string, signal: string) {
   console.log('generateProof started');
   try {
+    console.log('Initializing AnonAadhaar...');
     await init(anonAadhaarInitArgs);
     console.log('AnonAadhaar initialized');
 
     const nullifierSeed = BigInt("2222129237572311751221168725011824235124166");
 
+    console.log('Generating args...');
     const args = await generateArgs({
       qrData: qrCode,
       certificateFile: certificate,
@@ -40,10 +42,18 @@ export async function generateProof(qrCode: string, signal: string) {
     console.log('Args generated');
 
     console.log('Starting prove function');
-    const proofResult = await prove(args);
-    console.log("Proof generated", proofResult);
-    console.log('Prove function completed successfully');
+    const startTime = Date.now();
+    let proofResult;
+    try {
+      proofResult = await prove(args);
+    } catch (proveError) {
+      console.error('Error in prove function:', proveError);
+      throw new Error(`Prove function failed: ${proveError.message}`);
+    }
+    const endTime = Date.now();
+    console.log(`Prove function completed in ${(endTime - startTime) / 1000} seconds`);
 
+    console.log('Writing proof to file...');
     await writeFile(
       join(__dirname, "./proof.json"),
       JSON.stringify(proofResult),

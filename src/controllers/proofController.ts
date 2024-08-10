@@ -1,4 +1,3 @@
-//@ts-nocheck
 import type { Request, Response } from "express";
 import { generateProofService } from '../services/proofService.js';
 
@@ -18,7 +17,10 @@ export async function generateProofController(req: Request, res: Response) {
     console.error('Error generating proof:', error);
     res.status(500).json({ 
       error: 'An error occurred while generating the proof',
-      details: error.message
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
+  } finally {
+    console.log('Proof generation request handled');
   }
 }
