@@ -6,6 +6,7 @@ import { dirname, join } from "path";
 import { certificate } from "./certificate.js";
 import { writeFile } from "fs/promises";
 import { config } from "dotenv";
+import { updateProgress } from '../index.js';
 config();
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +57,7 @@ export async function generateProof(qrCode: string, signal: string) {
           const logInterval = 30000; // Log every 30 seconds
           
           const result = await prove(args, (progress) => {
+            updateProgress(progress * 100);
             const currentTime = Date.now();
             if (currentTime - lastLogTime >= logInterval) {
               console.log(`Prove function progress: ${progress * 100}%`);
