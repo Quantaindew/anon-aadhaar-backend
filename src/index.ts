@@ -10,8 +10,11 @@ dotenv.config();
 const app = express();
 const PORT = 8080;
 
+// Trust proxy
+app.set('trust proxy', true);
+
 // Global error handler
-app.use((err, req, res, next) => {
+app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error('Unhandled error:', err);
   res.status(500).json({ error: 'An unexpected error occurred' });
 });
@@ -39,14 +42,18 @@ const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  // Optionally, you can choose to exit the process here
-  // process.exit(1);
+// Error handling for the server
+server.on('error', (error: NodeJS.ErrnoException) => {
+  console.error('Server error:', error);
+  // Log the error but don't exit
 });
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('uncaughtException', (error: Error) => {
+  console.error('Uncaught Exception:', error);
+  // Log the error but keep the server running
+});
+
+process.on('unhandledRejection', (reason: {} | null | undefined, promise: Promise<any>) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Optionally, you can choose to exit the process here
-  // process.exit(1);
+  // Log the error but keep the server running
 });
