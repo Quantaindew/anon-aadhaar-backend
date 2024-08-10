@@ -21,7 +21,7 @@ module.exports = {
       path : '/home/paperspace/anon-aadhaar-backend',
       'pre-deploy-local': '',
       'post-deploy' : 'npm install && npm run build && pm2 reload ecosystem.config.js --env production',
-      'pre-setup': 'npm install -g pm2'
+      'pre-setup': ''
     }
   }
 };
