@@ -177,3 +177,4 @@ dist
 *.wasm
 codebase.md
 proof.json
+.vercel

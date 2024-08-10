@@ -1,3 +1,4 @@
+//@ts-nocheck
 import type { Request, Response } from "express";
 import { generateProofService } from '../services/proofService.js';
 

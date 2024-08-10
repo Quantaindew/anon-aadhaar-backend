@@ -1,3 +1,4 @@
+//@ts-nocheck
 import { init, prove, ArtifactsOrigin, generateArgs } from "@anon-aadhaar/core";
 import type { InitArgs } from "@anon-aadhaar/core";
 import { fileURLToPath } from "url";
@@ -40,7 +41,7 @@ export async function generateProof(qrCode: string, signal: string) {
     const anonAadhaarCore = await prove(args);
     //
     writeFile(
-      join(__dirname, "../../../../anon-aadhaar-contract/proof.json"),
+      join(__dirname, "./proof.json"),
       JSON.stringify(anonAadhaarCore),
     );
     return anonAadhaarCore;
