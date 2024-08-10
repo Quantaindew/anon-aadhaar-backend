@@ -47,23 +47,31 @@ export async function generateProof(qrCode: string, signal: string) {
 
     console.time('prove');
     console.log('Starting prove function');
-    const anonAadhaarCore = await prove(args);
+    let proofResult;
+    try {
+      proofResult = await Promise.race([
+        prove(args),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Prove function timed out after 5 minutes')), 300000))
+      ]);
+    } catch (proveError) {
+      console.error('Error in prove function:', proveError);
+      throw proveError;
+    }
     console.timeEnd('prove');
     console.log('Prove function completed');
 
     console.time('writeFile');
     await writeFile(
       join(__dirname, "./proof.json"),
-      JSON.stringify(anonAadhaarCore),
+      JSON.stringify(proofResult),
     );
     console.timeEnd('writeFile');
     console.log('Proof written to file');
-    return anonAadhaarCore;
+    return proofResult;
 
   } catch (error) {
-    console.error("An error occurred in generatedProof:", error);
+    console.error("An error occurred in generateProof:", error);
     throw error;
   }
 }
-
 //generateProof(`${process.env.QR_CODE}`, "1234532454678").then(console.log).catch(console.error);
