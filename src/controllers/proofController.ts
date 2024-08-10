@@ -6,6 +6,8 @@ export async function generateProofController(req: Request, res: Response) {
   console.log('Proof generation request received');
   try {
     const { qrCode, signal } = req.body;
+    console.log('Request body:', { qrCode: qrCode ? 'present' : 'missing', signal: signal ? 'present' : 'missing' });
+    
     if (!qrCode || !signal) {
       return res.status(400).json({ error: 'QR code and signal are required' });
     }

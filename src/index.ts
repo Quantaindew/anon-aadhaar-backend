@@ -1,4 +1,3 @@
-//@ts-nocheck
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -9,7 +8,7 @@ import userRoutes from "./routes/userRoutes.js";
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3222;
+const PORT = 8080 ;
 
 app.use((req, res, next) => {
   res.setTimeout(900000, () => { // 15 minutes
@@ -29,14 +28,14 @@ app.use(
   }),
 );
 
-// Remove this line as it's replaced by the one with the limit above
-// app.use(express.json());
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
 
 app.use("/api/proof", proofRoutes);
 app.use("/api/connection", connectRoutes);
 app.use("/api/user", userRoutes);
-app.use("/api/", (req,res)=>{return res.json({status:"OK"})});
 
-app.listen(PORT,'0.0.0.0', () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
