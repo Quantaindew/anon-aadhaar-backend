@@ -20,9 +20,10 @@ const anonAadhaarInitArgs: InitArgs = {
 };
 
 export async function generateProof(qrCode: string, signal: string) {
+  console.log('generateProof started');
   try {
     await init(anonAadhaarInitArgs);
-
+    console.log('AnonAadhaar initialized');
     const nullifierSeed = BigInt("2222129237572311751221168725011824235124166");
 
     const args = await generateArgs({
@@ -37,16 +38,21 @@ export async function generateProof(qrCode: string, signal: string) {
         "revealState",
       ],
     });
-    console.log("args", args);
+    console.log('Args generated');
+
+    console.log('Starting prove function');
     const anonAadhaarCore = await prove(args);
+    console.log('Prove function completed');
     //
-    writeFile(
+    await writeFile(
       join(__dirname, "./proof.json"),
       JSON.stringify(anonAadhaarCore),
     );
+    console.log('Proof written to file');
     return anonAadhaarCore;
+
   } catch (error) {
-    console.error("An error occurred:", error);
+    console.error("An error occurred in generatedProof:", error);
     throw error;
   }
 }

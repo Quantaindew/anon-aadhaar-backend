@@ -3,17 +3,18 @@ import type { Request, Response } from "express";
 import { generateProofService } from '../services/proofService.js';
 
 export async function generateProofController(req: Request, res: Response) {
-  // Set a longer timeout (e.g., 5 minutes)
-  req.setTimeout(300000); // 5 minutes in milliseconds
-    
+  console.log('Proof generation request received');
   try {
     const { qrCode, signal } = req.body;
     if (!qrCode || !signal) {
       return res.status(400).json({ error: 'QR code and signal are required' });
     }
+    console.log('Starting proof generation');
     const proof = await generateProofService(qrCode, signal);
+    console.log('Proof generation completed');
     res.json({ proof });
   } catch (error) {
+    console.error('Error generating proof:', error);
     res.status(500).json({ error: 'An error occurred while generating the proof' });
   }
 }
