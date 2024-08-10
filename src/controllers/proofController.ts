@@ -17,7 +17,10 @@ export async function generateProofController(req: Request, res: Response) {
     const proofPromise = generateProofService(qrCode, signal);
     
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error('Proof generation timed out after 10 minutes')), 600000);
+      setTimeout(() => {
+        console.log('Controller: timeout reached');
+        reject(new Error('Proof generation timed out after 15 minutes'));
+      }, 900000);
     });
 
     const proof = await Promise.race([proofPromise, timeoutPromise]);
@@ -35,5 +38,7 @@ export async function generateProofController(req: Request, res: Response) {
         stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       });
     }
+  } finally {
+    console.log('Proof generation request handled');
   }
 }
