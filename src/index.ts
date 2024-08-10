@@ -25,7 +25,7 @@ app.use("/api/connection", connectRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/", (req,res)=>{return res.json({status:"OK"})});
 
-app.listen(PORT, () => {
+app.listen(PORT,'0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
 
