@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3222;
 
 app.use(
   cors({
-    origin: "*",
+    origin: "https://omelette-app.vercel.app",
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
