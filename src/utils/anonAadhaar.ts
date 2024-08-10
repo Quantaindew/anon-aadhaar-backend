@@ -52,7 +52,17 @@ export async function generateProof(qrCode: string, signal: string) {
       const provePromise = new Promise(async (resolve, reject) => {
         try {
           console.log('Prove function: starting computation');
-          const result = await prove(args);
+          let lastLogTime = Date.now();
+          const logInterval = 30000; // Log every 30 seconds
+          
+          const result = await prove(args, (progress) => {
+            const currentTime = Date.now();
+            if (currentTime - lastLogTime >= logInterval) {
+              console.log(`Prove function progress: ${progress * 100}%`);
+              lastLogTime = currentTime;
+            }
+          });
+          
           console.log('Prove function: computation completed');
           resolve(result);
         } catch (error) {
@@ -65,8 +75,8 @@ export async function generateProof(qrCode: string, signal: string) {
         provePromise,
         new Promise((_, reject) => setTimeout(() => {
           console.log('Prove function: timeout reached');
-          reject(new Error('Prove function timed out after 10 minutes'));
-        }, 600000))
+          reject(new Error('Prove function timed out after 15 minutes'));
+        }, 900000))
       ]);
       console.log('Prove function completed successfully');
     } catch (proveError) {

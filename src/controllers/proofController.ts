@@ -4,6 +4,7 @@ import { generateProofService } from '../services/proofService.js';
 
 export async function generateProofController(req: Request, res: Response) {
   console.log('Proof generation request received');
+  let timeoutId;
   try {
     const { qrCode, signal } = req.body;
     console.log('Request body:', { qrCode: qrCode ? 'present' : 'missing', signal: signal ? 'present' : 'missing' });
@@ -16,29 +17,31 @@ export async function generateProofController(req: Request, res: Response) {
     console.log('Starting proof generation');
     const proofPromise = generateProofService(qrCode, signal);
     
-    const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => {
-        console.log('Controller: timeout reached');
-        reject(new Error('Proof generation timed out after 15 minutes'));
-      }, 900000);
-    });
+    timeoutId = setTimeout(() => {
+      console.log('Controller: timeout reached');
+      res.status(504).json({ error: 'Proof generation timed out after 15 minutes' });
+    }, 900000);
 
-    const proof = await Promise.race([proofPromise, timeoutPromise]);
+    const proof = await proofPromise;
     
+    clearTimeout(timeoutId);
     console.log('Proof generation completed');
     res.json({ proof });
   } catch (error) {
     console.error('Error generating proof:', error);
-    if (error.message.includes('timed out')) {
-      res.status(504).json({ error: 'Proof generation timed out', details: error.message });
-    } else {
-      res.status(500).json({ 
-        error: 'An error occurred while generating the proof',
-        details: error.message,
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-      });
+    if (!res.headersSent) {
+      if (error.message.includes('timed out')) {
+        res.status(504).json({ error: 'Proof generation timed out', details: error.message });
+      } else {
+        res.status(500).json({ 
+          error: 'An error occurred while generating the proof',
+          details: error.message,
+          stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        });
+      }
     }
   } finally {
+    clearTimeout(timeoutId);
     console.log('Proof generation request handled');
   }
 }
