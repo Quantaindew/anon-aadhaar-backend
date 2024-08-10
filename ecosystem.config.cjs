@@ -10,18 +10,5 @@ module.exports = {
     env: {
       NODE_ENV: "production",
     },
-  }],
-
-  deploy : {
-    production : {
-      user : 'paperspace',
-      host : '184.105.118.135',
-      ref  : 'origin/main',
-      repo : 'https://github.com/Quantaindew/anon-aadhaar-backend.git',
-      path : '/home/paperspace/anon-aadhaar-backend',
-      'pre-deploy-local': '',
-      'post-deploy' : 'npm install && npm run build && pm2 reload ecosystem.config.js --env production',
-      'pre-setup': ''
-    }
-  }
+  }]
 };
