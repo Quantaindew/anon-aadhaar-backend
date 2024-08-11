@@ -1,4 +1,4 @@
-//@ts-nocheck
+
 import type { Request, Response } from "express";
 import { generateProofService } from '../services/proofService.js';
 import { ABI } from "../utils/contractABI.js";
@@ -64,7 +64,7 @@ export async function userController(req: Request, res: Response) {
   
         // Fetch and log user data
         const userData = await contract.getUserByAddress(address);
-        res.json({user})
+        res.json({userData});
     } catch (error) {
         res.json({error})
     }

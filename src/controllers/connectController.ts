@@ -1,4 +1,3 @@
-//@ts-nocheck
 import type { Request, Response } from "express";
 
 interface OnlineUser {

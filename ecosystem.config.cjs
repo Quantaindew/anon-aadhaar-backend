@@ -2,12 +2,12 @@ module.exports = {
   apps : [{
     name: "anon-aadhaar-backend",
     script: "dist/index.js",
-    instances: 4,
+    instances: 1,
     exec_mode: "cluster",
     autorestart: true,
     watch: false,
     max_memory_restart: '4G',
-    node_args: "--max-old-space-size=4096 --expose-gc",
+    node_args: "--max-old-space-size=4096 --expose-gc --watch",
     env: {
       NODE_ENV: "production",
     },

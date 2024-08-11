@@ -1,4 +1,3 @@
-//@ts-nocheck
 import { init, prove, ArtifactsOrigin, generateArgs } from "@anon-aadhaar/core";
 import type { InitArgs } from "@anon-aadhaar/core";
 import { fileURLToPath } from "url";
