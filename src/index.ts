@@ -1,63 +1,46 @@
+//@ts-nocheck
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
-import fs from 'fs/promises';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import proofRoutes from "./routes/proofRoutes.js";
 import connectRoutes from "./routes/connectRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-import { downloadArtifacts } from "./utils/downloadArtifacts.js";
-import http from 'http';
-import { Worker } from 'worker_threads';
+import v8 from 'v8';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Set V8 flags for memory management
+v8.setFlagsFromString('--max-old-space-size=4096');
+v8.setFlagsFromString('--expose-gc');
+
+// Perform garbage collection
+const performGC = () => {
+  if (global.gc) {
+    global.gc();
+    console.log('Garbage collection performed');
+  } else {
+    console.log('Garbage collection not available');
+  }
+};
+
+// Monitor memory usage
+const logMemoryUsage = () => {
+  const used = process.memoryUsage();
+  console.log('Memory usage:');
+  for (let key in used) {
+    console.log(`${key}: ${Math.round(used[key] / 1024 / 1024 * 100) / 100} MB`);
+  }
+};
 
 dotenv.config();
 
 const app = express();
-const PORT = 8080;
+const PORT = process.env.PORT || 3222;
 
-// Simple job tracking
-const jobs = new Map();
-
-// Create a worker for proof generation
-const worker = new Worker('./proofWorker.js');
-
-worker.on('message', (result) => {
-  console.log('Proof generation completed:', result);
-  if (result.jobId) {
-    jobs.set(result.jobId, { status: 'completed', result: result.proof });
-  }
-});
-
-worker.on('error', (error) => {
-  console.error('Worker error:', error);
-});
-
-worker.on('exit', (code) => {
-  if (code !== 0) {
-    console.error(`Worker stopped with exit code ${code}`);
-  }
-});
-
-app.set('trust proxy', true);
-
-// Logging middleware
+// Add these lines to set global timeout and increase payload limit
 app.use((req, res, next) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    console.log(`${req.method} ${req.url} ${res.statusCode} - ${duration}ms`);
+  res.setTimeout(300000, () => {
+    res.status(408).send('Request has timed out');
   });
   next();
-});
-
-// Global error handler
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  console.error('Unhandled error:', err);
-  res.status(500).json({ error: 'An unexpected error occurred' });
 });
 
 app.use(express.json({ limit: '50mb' }));
@@ -65,95 +48,52 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(
   cors({
-    origin: ["https://omelette-app.vercel.app", "https://omelette.discloud.app"],
+    origin: "https://omelette-app.vercel.app",
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
 );
 
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'OK' });
+// Middleware to perform GC before and after each request, and log memory usage
+app.use((req, res, next) => {
+  performGC();
+  logMemoryUsage();
+  console.log(`Request started: ${req.method} ${req.url}`);
+
+  res.on('finish', () => {
+    performGC();
+    logMemoryUsage();
+    console.log(`Request finished: ${req.method} ${req.url}`);
+  });
+
+  next();
 });
 
-// Modify proof routes to use the worker
-app.use("/api/proof", (req, res, next) => {
-  if (req.method === 'POST' && req.path === '/generate') {
-    const jobId = Date.now().toString();
-    jobs.set(jobId, { status: 'pending' });
-    worker.postMessage({ ...req.body, jobId });
-    res.json({ jobId, message: 'Proof generation started' });
-  } else {
-    proofRoutes(req, res, next);
-  }
-});
-
-// Add a new route to check proof generation status
-app.get("/api/proof/status/:jobId", (req, res) => {
-  const jobId = req.params.jobId;
-  const job = jobs.get(jobId);
-  
-  if (!job) {
-    res.status(404).json({ error: 'Job not found' });
-  } else {
-    res.json({ jobId, ...job });
-  }
-});
-
+app.use("/api/proof", proofRoutes);
 app.use("/api/connection", connectRoutes);
 app.use("/api/user", userRoutes);
-
-async function checkAndDownloadArtifacts() {
-  const artifactsDir = path.join(__dirname, 'public');
-  const requiredArtifacts = ['aadhaar-verifier.wasm', 'vkey.json', 'circuit_final.zkey'];
-  
-  let missingArtifacts = false;
-  
-  for (const artifact of requiredArtifacts) {
-    const artifactPath = path.join(artifactsDir, artifact);
-    const exists = await fs.stat(artifactPath).then(() => true).catch(() => false);
-    if (!exists) {
-      missingArtifacts = true;
-      break;
-    }
-  }
-
-  if (missingArtifacts) {
-    console.log('Some artifacts are missing. Downloading...');
-    await downloadArtifacts();
-  } else {
-    console.log('All artifacts are present.');
-  }
-}
-
-async function startServer() {
-  try {
-    await checkAndDownloadArtifacts();
-
-    const server = http.createServer(app);
-
-    server.keepAliveTimeout = 120000; // 2 minutes
-    server.headersTimeout = 120000; // 2 minutes
-
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
-
-    server.on('error', (error: NodeJS.ErrnoException) => {
-      console.error('Server error:', error);
-    });
-
-  } catch (error) {
-    console.error('Failed to start server:', error);
-
-  }
-}
-
-startServer();
-
-process.on('uncaughtException', (error: Error) => {
-  console.error('Uncaught Exception:', error);
+app.use("/api/", (req, res) => {
+  return res.json({ status: "OK" });
 });
 
-process.on('unhandledRejection', (reason: {} | null | undefined, promise: Promise<any>) => {
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
+// Perform garbage collection and log memory usage every 5 minutes
+setInterval(() => {
+  performGC();
+  logMemoryUsage();
+}, 5 * 60 * 1000);
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  performGC();
+  logMemoryUsage();
+});
+
+process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  performGC();
+  logMemoryUsage();
 });
