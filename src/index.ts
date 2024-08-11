@@ -2,10 +2,17 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import proofRoutes from "./routes/proofRoutes.js";
 import connectRoutes from "./routes/connectRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import { downloadArtifacts } from "./utils/downloadArtifacts.js";
 import v8 from 'v8';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Set V8 flags for memory management
 v8.setFlagsFromString('--max-old-space-size=4096');
@@ -33,7 +40,7 @@ const logMemoryUsage = () => {
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 8080;
+const PORT = 8080;
 
 // Add these lines to set global timeout and increase payload limit
 app.use((req, res, next) => {
@@ -76,9 +83,43 @@ app.use("/api/", (req, res) => {
   return res.json({ status: "OK" });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+async function checkAndDownloadArtifacts() {
+  const artifactsDir = path.join(__dirname, 'public');
+  const requiredArtifacts = ['aadhaar-verifier.wasm', 'vkey.json', 'circuit_final.zkey'];
+  
+  let missingArtifacts = false;
+  
+  for (const artifact of requiredArtifacts) {
+    const artifactPath = path.join(artifactsDir, artifact);
+    const exists = await fs.stat(artifactPath).then(() => true).catch(() => false);
+    if (!exists) {
+      missingArtifacts = true;
+      break;
+    }
+  }
+
+  if (missingArtifacts) {
+    console.log('Some artifacts are missing. Downloading...');
+    await downloadArtifacts();
+  } else {
+    console.log('All artifacts are present.');
+  }
+}
+
+async function startServer() {
+  try {
+    await checkAndDownloadArtifacts();
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 // Perform garbage collection and log memory usage every 5 minutes
 setInterval(() => {
