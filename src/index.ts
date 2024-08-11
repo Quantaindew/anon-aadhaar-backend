@@ -24,7 +24,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 app.use(
   cors({
-    origin: ["https://omelette-app.vercel.app", "https://184.105.118.135"],
+    origin: ["https://omelette-app.vercel.app", "https://omelette.discloud.app"],
     methods: ["GET", "POST"],
     allowedHeaders: ["Content-Type", "Authorization"],
   }),
