@@ -30,7 +30,7 @@
 
     // Additional options for cleaner output
     "removeComments": true,
-    "sourceMap": true
+    //"sourceMap": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

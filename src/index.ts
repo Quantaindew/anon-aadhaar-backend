@@ -1,9 +1,16 @@
 import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import proofRoutes from "./routes/proofRoutes.js";
 import connectRoutes from "./routes/connectRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import { downloadArtifacts } from "./utils/downloadArtifacts.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
@@ -38,15 +45,50 @@ app.use("/api/proof", proofRoutes);
 app.use("/api/connection", connectRoutes);
 app.use("/api/user", userRoutes);
 
-const server = app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+async function checkAndDownloadArtifacts() {
+  const artifactsDir = path.join(__dirname, 'public');
+  const requiredArtifacts = ['aadhaar-verifier.wasm', 'vkey.json', 'circuit_final.zkey'];
+  
+  let missingArtifacts = false;
+  
+  for (const artifact of requiredArtifacts) {
+    const artifactPath = path.join(artifactsDir, artifact);
+    const exists = await fs.stat(artifactPath).then(() => true).catch(() => false);
+    if (!exists) {
+      missingArtifacts = true;
+      break;
+    }
+  }
 
-// Error handling for the server
-server.on('error', (error: NodeJS.ErrnoException) => {
-  console.error('Server error:', error);
-  // Log the error but don't exit
-});
+  if (missingArtifacts) {
+    console.log('Some artifacts are missing. Downloading...');
+    await downloadArtifacts();
+  } else {
+    console.log('All artifacts are present.');
+  }
+}
+
+async function startServer() {
+  try {
+    await checkAndDownloadArtifacts();
+
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server is running on port ${PORT}`);
+    });
+
+    // Error handling for the server
+    server.on('error', (error: NodeJS.ErrnoException) => {
+      console.error('Server error:', error);
+      // Log the error but don't exit
+    });
+
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();
 
 process.on('uncaughtException', (error: Error) => {
   console.error('Uncaught Exception:', error);
