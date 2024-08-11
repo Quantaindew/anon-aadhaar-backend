@@ -8,7 +8,7 @@ import { writeFile } from "fs/promises";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const artifactsDirName = join(__dirname, "../../public");
+const artifactsDirName = join(__dirname, "../public");
 
 const anonAadhaarInitArgs: InitArgs = {
   wasmURL: join(artifactsDirName, "aadhaar-verifier.wasm"),
