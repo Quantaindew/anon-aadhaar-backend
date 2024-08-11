@@ -18,15 +18,15 @@ const __dirname = path.dirname(__filename);
 v8.setFlagsFromString('--max-old-space-size=4096');
 v8.setFlagsFromString('--expose-gc');
 
-// Perform garbage collection
-const performGC = () => {
-  if (global.gc) {
-    global.gc();
-    console.log('Garbage collection performed');
-  } else {
-    console.log('Garbage collection not available');
-  }
-};
+// // Perform garbage collection
+// const performGC = () => {
+//   if (global.gc) {
+//     global.gc();
+//     console.log('Garbage collection performed');
+//   } else {
+//     console.log('Garbage collection not available');
+//   }
+// };
 
 // Monitor memory usage
 const logMemoryUsage = () => {
@@ -63,12 +63,12 @@ app.use(
 
 // Middleware to perform GC before and after each request, and log memory usage
 app.use((req, res, next) => {
-  performGC();
+  
   logMemoryUsage();
   console.log(`Request started: ${req.method} ${req.url}`);
 
   res.on('finish', () => {
-    performGC();
+    
     logMemoryUsage();
     console.log(`Request finished: ${req.method} ${req.url}`);
   });
@@ -123,18 +123,18 @@ startServer();
 
 // Perform garbage collection and log memory usage every 5 minutes
 setInterval(() => {
-  performGC();
+  
   logMemoryUsage();
 }, 5 * 60 * 1000);
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
-  performGC();
+  
   logMemoryUsage();
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  performGC();
+  
   logMemoryUsage();
 });
