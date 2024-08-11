@@ -18,7 +18,15 @@ const __dirname = path.dirname(__filename);
 v8.setFlagsFromString('--max-old-space-size=4096');
 v8.setFlagsFromString('--expose-gc');
 
-
+// // Perform garbage collection
+// const performGC = () => {
+//   if (global.gc) {
+//     global.gc();
+//     console.log('Garbage collection performed');
+//   } else {
+//     console.log('Garbage collection not available');
+//   }
+// };
 
 // Monitor memory usage
 const logMemoryUsage = () => {
