@@ -8,6 +8,7 @@ import proofRoutes from "./routes/proofRoutes.js";
 import connectRoutes from "./routes/connectRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import { downloadArtifacts } from "./utils/downloadArtifacts.js";
+import http from 'http';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,8 +18,18 @@ dotenv.config();
 const app = express();
 const PORT = 8080;
 
-// Trust proxy
-//app.set('trust proxy', true);
+// Trust proxy (important for Cloudflare)
+app.set('trust proxy', true);
+
+// Logging middleware
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`${req.method} ${req.url} ${res.statusCode} - ${duration}ms`);
+  });
+  next();
+});
 
 // Global error handler
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -72,7 +83,13 @@ async function startServer() {
   try {
     await checkAndDownloadArtifacts();
 
-    const server = app.listen(PORT, '0.0.0.0', () => {
+    const server = http.createServer(app);
+
+    // Enable keep-alive
+    server.keepAliveTimeout = 300000; // 2 minutes
+    server.headersTimeout = 300000; // 2 minutes
+
+    server.listen(PORT, '0.0.0.0', () => {
       console.log(`Server is running on port ${PORT}`);
     });
 
