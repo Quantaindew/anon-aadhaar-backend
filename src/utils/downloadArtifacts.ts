@@ -1,4 +1,5 @@
-import fs from 'fs';
+import fs from 'fs/promises';
+import { createWriteStream } from 'fs';
 import path from 'path';
 import https from 'https';
 import { fileURLToPath } from 'url';
@@ -17,7 +18,7 @@ const artifacts = [
 
 function downloadFile(url: string, dest: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const file = fs.createWriteStream(dest);
+    const file = createWriteStream(dest);
     https.get(url, (response) => {
       response.pipe(file);
       file.on('finish', () => {
