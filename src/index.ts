@@ -33,7 +33,7 @@ const logMemoryUsage = () => {
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3222;
+const PORT = process.env.PORT || 8080;
 
 // Add these lines to set global timeout and increase payload limit
 app.use((req, res, next) => {
