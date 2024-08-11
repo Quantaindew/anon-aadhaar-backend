@@ -9,6 +9,7 @@ import connectRoutes from "./routes/connectRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import { downloadArtifacts } from "./utils/downloadArtifacts.js";
 import http from 'http';
+import { Worker } from 'worker_threads';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -18,7 +19,29 @@ dotenv.config();
 const app = express();
 const PORT = 8080;
 
-// Trust proxy (important for Cloudflare)
+// Simple job tracking
+const jobs = new Map();
+
+// Create a worker for proof generation
+const worker = new Worker('./proofWorker.js');
+
+worker.on('message', (result) => {
+  console.log('Proof generation completed:', result);
+  if (result.jobId) {
+    jobs.set(result.jobId, { status: 'completed', result: result.proof });
+  }
+});
+
+worker.on('error', (error) => {
+  console.error('Worker error:', error);
+});
+
+worker.on('exit', (code) => {
+  if (code !== 0) {
+    console.error(`Worker stopped with exit code ${code}`);
+  }
+});
+
 app.set('trust proxy', true);
 
 // Logging middleware
@@ -52,7 +75,30 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
 });
 
-app.use("/api/proof", proofRoutes);
+// Modify proof routes to use the worker
+app.use("/api/proof", (req, res, next) => {
+  if (req.method === 'POST' && req.path === '/generate') {
+    const jobId = Date.now().toString();
+    jobs.set(jobId, { status: 'pending' });
+    worker.postMessage({ ...req.body, jobId });
+    res.json({ jobId, message: 'Proof generation started' });
+  } else {
+    proofRoutes(req, res, next);
+  }
+});
+
+// Add a new route to check proof generation status
+app.get("/api/proof/status/:jobId", (req, res) => {
+  const jobId = req.params.jobId;
+  const job = jobs.get(jobId);
+  
+  if (!job) {
+    res.status(404).json({ error: 'Job not found' });
+  } else {
+    res.json({ jobId, ...job });
+  }
+});
+
 app.use("/api/connection", connectRoutes);
 app.use("/api/user", userRoutes);
 
@@ -85,23 +131,20 @@ async function startServer() {
 
     const server = http.createServer(app);
 
-    // Enable keep-alive
-    server.keepAliveTimeout = 300000; // 2 minutes
-    server.headersTimeout = 300000; // 2 minutes
+    server.keepAliveTimeout = 120000; // 2 minutes
+    server.headersTimeout = 120000; // 2 minutes
 
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`Server is running on port ${PORT}`);
     });
 
-    // Error handling for the server
     server.on('error', (error: NodeJS.ErrnoException) => {
       console.error('Server error:', error);
-      // Log the error but don't exit
     });
 
   } catch (error) {
     console.error('Failed to start server:', error);
-    process.exit(1);
+
   }
 }
 
@@ -109,10 +152,8 @@ startServer();
 
 process.on('uncaughtException', (error: Error) => {
   console.error('Uncaught Exception:', error);
-  // Log the error but keep the server running
 });
 
 process.on('unhandledRejection', (reason: {} | null | undefined, promise: Promise<any>) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Log the error but keep the server running
 });
