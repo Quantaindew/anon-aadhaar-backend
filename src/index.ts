@@ -18,7 +18,7 @@ const app = express();
 const PORT = 8080;
 
 // Trust proxy
-app.set('trust proxy', true);
+//app.set('trust proxy', true);
 
 // Global error handler
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

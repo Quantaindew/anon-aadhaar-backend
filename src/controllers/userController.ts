@@ -3,7 +3,6 @@ import type { Request, Response } from "express";
 import { generateProofService } from '../services/proofService.js';
 import { ABI } from "../utils/contractABI.js";
 import { ethers } from 'ethers';
-import { data } from '../../sampledata.js'
 import { writeFile } from 'fs/promises';
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
